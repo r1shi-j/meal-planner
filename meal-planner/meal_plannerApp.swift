@@ -11,7 +11,7 @@ import SwiftUI
 struct meal_plannerApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            HomeView()
         }
     }
 }
