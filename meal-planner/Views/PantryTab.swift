@@ -104,6 +104,7 @@ struct PantryShoppingView: View {
                             
                             Spacer()
                         }
+                        .sensoryFeedback(.success, trigger: item.isChecked)
                     }
                     .onDelete { indices in
                         store.shoppingList.remove(atOffsets: indices)
@@ -111,6 +112,26 @@ struct PantryShoppingView: View {
                 }
             } header: {
                 Text("To Buy (\(store.shoppingList.filter { !$0.isChecked }.count))")
+            }
+            
+            // Move Bought Items to Pantry Action
+            if store.shoppingList.contains(where: { $0.isChecked }) {
+                Section {
+                    Button {
+                        let bought = store.shoppingList.filter { $0.isChecked }
+                        for item in bought {
+                            store.pantry.append(PantryItem(name: item.name, quantity: 1))
+                        }
+                        store.shoppingList.removeAll { $0.isChecked }
+                    } label: {
+                        HStack {
+                            Image(systemName: "arrow.right.circle.fill")
+                            Text("Move Bought Items to Pantry")
+                                .fontWeight(.semibold)
+                        }
+                        .foregroundStyle(Color.accentColor)
+                    }
+                }
             }
         }
     }

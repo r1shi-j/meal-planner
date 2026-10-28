@@ -114,6 +114,7 @@ struct MealDetailView: View {
                 }
                 .padding()
             }
+            .background(Color.purple.opacity(0.2))
             .navigationTitle("Recipe")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

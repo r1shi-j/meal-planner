@@ -122,23 +122,34 @@ struct FoodScannerView: View {
                                 }
                                 Spacer()
                                 
-                                // Score Badge
-                                Text("\(data.healthScore)")
-                                    .font(.title2.bold())
-                                    .frame(width: 48, height: 48)
-                                    .background(data.healthScore >= 7 ? Color.green.opacity(0.15) : Color.orange.opacity(0.15))
-                                    .foregroundStyle(data.healthScore >= 7 ? Color.green : Color.orange)
-                                    .clipShape(Circle())
+                                // Animated Activity-style Score Ring
+                                ZStack {
+                                    Circle()
+                                        .stroke(Color.gray.opacity(0.2), lineWidth: 5)
+                                        .frame(width: 52, height: 52)
+                                    Circle()
+                                        .trim(from: 0, to: CGFloat(data.healthScore) / 10.0)
+                                        .stroke(
+                                            data.healthScore >= 7 ? Color.green : (data.healthScore >= 5 ? Color.orange : Color.red),
+                                            style: StrokeStyle(lineWidth: 5, lineCap: .round)
+                                        )
+                                        .rotationEffect(.degrees(-90))
+                                        .frame(width: 52, height: 52)
+                                        .animation(.spring(response: 0.8, dampingFraction: 0.7), value: data.healthScore)
+                                    Text("\(data.healthScore)")
+                                        .font(.title3.bold())
+                                        .foregroundStyle(data.healthScore >= 7 ? Color.green : (data.healthScore >= 5 ? Color.orange : Color.red))
+                                }
                             }
                             
                             Divider()
                             
                             // 4-Column Macro Stats (Like Apple Fitness)
                             HStack(spacing: 8) {
-                                macroBox(label: "Calories", value: "\(data.calories)", unit: "kcal", color: .orange)
-                                macroBox(label: "Protein", value: data.protein, unit: "", color: .red)
-                                macroBox(label: "Carbs", value: data.carbs, unit: "", color: .blue)
-                                macroBox(label: "Fat", value: data.fat, unit: "", color: .yellow)
+                                macroBox(icon: "flame.fill", label: "Calories", value: "\(data.calories)", unit: "kcal", color: .orange)
+                                macroBox(icon: "bolt.fill", label: "Protein", value: data.protein, unit: "", color: .red)
+                                macroBox(icon: "leaf.fill", label: "Carbs", value: data.carbs, unit: "", color: .blue)
+                                macroBox(icon: "drop.fill", label: "Fat", value: data.fat, unit: "", color: .yellow)
                             }
                             
                             Divider()
@@ -186,12 +197,15 @@ struct FoodScannerView: View {
                 }
                 .padding(.bottom, 30)
             }
+            .background(Color.purple.opacity(0.2))
             .navigationBarTitleDisplayMode(.inline)
             .alert("Recipe Saved!", isPresented: $savedAlert) {
                 Button("OK", role: .cancel) { }
             } message: {
                 Text("This meal has been added to your Recipes tab.")
             }
+            .sensoryFeedback(.success, trigger: savedAlert)
+            .sensoryFeedback(.impact(weight: .medium), trigger: analysis != nil)
             .onChange(of: selectedPhotoItem) { _, newItem in
                 Task {
                     if let data = try? await newItem?.loadTransferable(type: Data.self),
@@ -208,11 +222,16 @@ struct FoodScannerView: View {
     }
     
     // Macro Stat Box Component
-    private func macroBox(label: String, value: String, unit: String, color: Color) -> some View {
-        VStack(spacing: 4) {
+    private func macroBox(icon: String, label: String, value: String, unit: String, color: Color) -> some View {
+        VStack(spacing: 5) {
+            Image(systemName: icon)
+                .font(.system(size: 11))
+                .foregroundStyle(color)
+            
             Text(label)
-                .font(.caption2)
+                .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(.secondary)
+            
             HStack(alignment: .lastTextBaseline, spacing: 2) {
                 Text(value)
                     .font(.subheadline.bold())
@@ -227,7 +246,8 @@ struct FoodScannerView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
         .background(Color(.tertiarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .shadow(color: color.opacity(0.12), radius: 4, x: 0, y: 2)
     }
     
     private func runAnalysis(_ image: UIImage) {

@@ -22,6 +22,13 @@ struct MealEditorView: View {
                 Section("Meal Details") {
                     TextField("Recipe Name (e.g. Scrambled Eggs)", text: $meal.name)
                     TextField("Prep Time (e.g. 15 mins)", text: $meal.prepTime)
+                    
+                    Picker("Category", selection: $meal.mealSlot) {
+                        ForEach(MealSlot.allCases) { slot in
+                            Text(slot.rawValue).tag(slot)
+                        }
+                    }
+                    .pickerStyle(.segmented)
                 }
                 
                 Section("Ingredients") {

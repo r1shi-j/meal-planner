@@ -15,6 +15,7 @@ struct RecipesView: View {
     @State private var selectedMeal: Meal? = nil
     
     @State private var showingAIGenerator: Bool = false
+    @State private var aiCategory: MealSlot = .dinner
     @State private var aiDescription: String = ""
     @State private var isGeneratingRecipe: Bool = false
     @State private var prefilledMeal: Meal? = nil // <-- Holds the AI-generated meal to review
@@ -53,13 +54,29 @@ struct RecipesView: View {
                                 selectedMeal = meal
                             } label: {
                                 HStack {
-                                    VStack(alignment: .leading, spacing: 4) {
+                                    VStack(alignment: .leading, spacing: 6) {
                                         Text(meal.name)
                                             .font(.headline)
                                             .foregroundStyle(.primary)
-                                        Text("\(meal.mealSlot.rawValue) • \(meal.prepTime)")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
+                                        HStack(spacing: 8) {
+                                            Text(meal.mealSlot.rawValue)
+                                                .font(.caption2.bold())
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 3)
+                                                .background(
+                                                    meal.mealSlot == .breakfast ? Color.orange.opacity(0.15) :
+                                                    (meal.mealSlot == .lunch ? Color.green.opacity(0.15) : Color.purple.opacity(0.15))
+                                                )
+                                                .foregroundStyle(
+                                                    meal.mealSlot == .breakfast ? Color.orange :
+                                                    (meal.mealSlot == .lunch ? Color.green : Color.purple)
+                                                )
+                                                .clipShape(Capsule())
+                                            
+                                            Text(meal.prepTime)
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
                                     }
                                     Spacer()
                                     Image(systemName: "chevron.right")
@@ -68,12 +85,15 @@ struct RecipesView: View {
                                 .padding()
                                 .background(Color(.secondarySystemBackground))
                                 .clipShape(.rect(cornerRadius: 16))
+                                .shadow(color: Color.purple.opacity(0.06), radius: 6, x: 0, y: 3)
                             }
                         }
                     }
                     .padding(.horizontal)
+                    .animation(.spring(response: 0.35, dampingFraction: 0.75), value: selectedFilter)
                 }
             }
+            .background(Color.purple.opacity(0.2))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .title) {
@@ -137,6 +157,14 @@ struct RecipesView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal)
                             .padding(.top)
+                        
+                        Picker("Category", selection: $aiCategory) {
+                            ForEach(MealSlot.allCases) { slot in
+                                Text(slot.rawValue).tag(slot)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .padding(.horizontal)
                         
                         TextEditor(text: $aiDescription)
                             .frame(height: 120)
@@ -220,7 +248,7 @@ struct RecipesView: View {
         
         Task {
             do {
-                let slot = selectedFilter ?? .dinner
+                let slot = aiCategory
                 let generatedMeal = try await GemmaService.shared.generateRecipe(from: desc, slot: slot)
                 await MainActor.run {
                     self.isGeneratingRecipe = false
